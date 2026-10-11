@@ -5,25 +5,38 @@ import numpy as np
 class LinearRegression:
     
     # Construction
-    def __init__(self, solver='normal',alpha=0.01,epochs=200, batch_size=32):
+    def __init__(self, solver='normal',alpha=0.01,epochs=2000, batch_size=32, shufle=False, random_state=42):
         # Parameters 
-        self._theta = None 
-        self._solver = solver
-        self._alpha =  alpha
-        if self._alpha <= 0:
-            raise ValueError("alpha must be greater than 0.")  
-        self._epochs = epochs
-        if self._epochs <= 0:
-            raise ValueError("epochs must be greater than 0.")
-        self._batch_size = batch_size 
-        # Validate batch
-        if self._batch_size <= 0:
+        self.__theta = None 
+        self.__solver = solver
+        if self.__solver != 'normal' and self.__solver != 'batch' and self.__solver != 'mini-batch' and self.__solver != 'stochastic': 
             raise ValueError(
-                "batch must be greater than 0."
-            )
+                "Optimization method doesn't exist. "
+                "choose 'normal', 'batch', 'stochastic', 'mini-batch' .")
+        self.__alpha =  alpha
+        if self.__alpha <= 0:
+            raise ValueError("alpha must be greater than 0.")  
+        self.__epochs = epochs
+        if self.__epochs <= 0:
+            raise ValueError("epochs must be greater than 0.")
+        elif type(self.__epochs) != int:
+            raise ValueError("epochs must have integer value")
+        self.__batch_size = batch_size 
+        # Validate batch
+        if self.__batch_size <= 0:
+            raise ValueError(
+                "batch_size must be greater than 0.")
+        elif type(self.__batch_size) != int:
+            raise ValueError("batch_size must have integer value.")
+        self.__shufle = shufle
+        if type(self.__shufle) != bool:
+            raise ValueError('shufle must have a boolean value (True or False).')
+        if type(random_state)!= int:
+            raise ValueError('random_state must have a integer value.')
+        self.__rng = np.random.default_rng(random_state)
         # Model information 
-        self.n_features_in_ = None 
-        self.n_iter_ = None 
+        self.__n_features_in_ = None 
+        self.__n_iter_ = None 
         # Training history
         self.cost_history_ = []
 
@@ -32,7 +45,7 @@ class LinearRegression:
     # =============================
     
     @staticmethod
-    def _validate_input(X,y):
+    def __validate_input(X,y):
         
         # converts the feature matrix and target to NumPy array 
         X = np.asarray(X)
@@ -42,24 +55,35 @@ class LinearRegression:
         if X.ndim != 2 :
             raise ValueError(
                 "X must be a 2D array of shape "
-                "(n_samples, n_features)."
-            )
+                "(n_samples, n_features).")
             
          # Same number of samples
         if X.shape[0] != y.shape[0]:
-            raise ValueError(
-                "X and y must contain the same number of samples."
-            )
+            raise ValueError("X and y must contain the same number of samples.")
             
-         
+        if X.shape[0] == 0:
+            raise ValueError("X must contain at least one sample.")
+
+        if X.shape[1] == 0:
+            raise ValueError("X must contain at least one feature.")
+
+        if not np.issubdtype(X.dtype, np.number):
+            raise ValueError("X must contain numeric values.")
+
+        if not np.issubdtype(y.dtype, np.number):
+            raise ValueError("y must contain numeric values.")
+
+        if not np.all(np.isfinite(X)) or not np.all(np.isfinite(y)):
+            raise ValueError("X and y must contain only finite values.")
+ 
         return X,y
         
     # ===============================================
     # CHECK FITTED 
     # ===============================================
 
-    def _check_fitted(self):
-        if self._theta is None:
+    def __check_fitted(self):
+        if self.__theta is None:
             raise ValueError(
                 "Model must be fitted before"
                 "accessing its parameters."
@@ -72,29 +96,29 @@ class LinearRegression:
     def fit(self,X,y):
         
         # Validate and convert inpu 
-        X,y = self._validate_input(X,y)
+        X,y = self.__validate_input(X,y)
 
         # Store number of features before adding incept 
-        self.n_features_in_ =  X.shape[1]
+        self.__n_features_in_ =  X.shape[1]
         
         # Add the intercept column 
-        X = self._add_intercept(X)
+        X = self.__add_intercept(X)
 
         # reset Training history 
         self.cost_history_= []
         
         # confirm the optimization method 
-        if self._solver == 'normal' :
-            self._normal_equation(X,y)
+        if self.__solver == 'normal' :
+            self.__normal_equation(X,y)
             
-        elif self._solver == 'batch':
-            self._batch_gradient_descent(X,y)
+        elif self.__solver == 'batch':
+            self.__batch_gradient_descent(X,y)
             
-        elif self._solver == 'stochastic':
-            self._stochastic_gradient_descent(X,y)
+        elif self.__solver == 'stochastic':
+            self.__stochastic_gradient_descent(X,y)
 
-        elif self._solver == 'mini-batch':
-            self._mini_gradient_descent(X,y)
+        elif self.__solver == 'mini-batch':
+            self.__mini_gradient_descent(X,y)
             
         else : 
             raise ValueError(
@@ -107,15 +131,15 @@ class LinearRegression:
     # ===============================
     # INITIALIZE THETA 
     # ===============================
-    def _initialize_theta(self, X):
-        self._theta = np.zeros(X.shape[1])
+    def __initialize_theta(self, X):
+        self.__theta = np.zeros(X.shape[1])
 
     # ===============================
     # ADD INTERCEPT 
     #================================
     
     @staticmethod
-    def _add_intercept(X):
+    def __add_intercept(X):
         return np.c_[np.ones(X.shape[0]),X]
         
 
@@ -126,7 +150,7 @@ class LinearRegression:
     def predict(self, X):
         
         # check the fitting 
-        self._check_fitted()
+        self.__check_fitted()
             
         # converts the feature matrix and target to NumPy array 
         X = np.asarray(X)
@@ -139,22 +163,22 @@ class LinearRegression:
                 )
             
         # Check number of features
-        if X.shape[1] != self.n_features_in_:
+        if X.shape[1] != self.__n_features_in_:
             raise ValueError(
-                f"X must contain {self.n_features_in_} features, "
+                f"X must contain {self.__n_features_in_} features, "
                 f"but received {X.shape[1]}."
             )
             
         # add the intercept to first column X 
         X = np.c_[np.ones(X.shape[0]),X]
         
-        return X @ self._theta 
+        return X @ self.__theta 
 
     
     # ==================================
     # check numerical stability 
     # ==================================
-    def _check_numerical_stability(self, value):
+    def __check_numerical_stability(self, value):
         if not np.all(np.isfinite(value)):
             raise ValueError(
                 "Training diverged due to numerical instability. "
@@ -165,10 +189,10 @@ class LinearRegression:
     # Calculate the Gradient 
     # ===================================
     
-    def _gradient(self,X,y):
+    def __gradient(self,X,y):
         
         # calculate the prediction
-        y_pred = X @ self._theta 
+        y_pred = X @ self.__theta 
 
         # measure the error 
         error = y_pred - y
@@ -183,9 +207,9 @@ class LinearRegression:
     # ===========================================
     # COST FUNCTION 
     # ===========================================
-    def _cost(self,X,y):
+    def __cost(self,X,y):
         
-        y_pred = X @ self._theta 
+        y_pred = X @ self.__theta 
         error = y_pred - y
         m = len(y)
 
@@ -196,76 +220,92 @@ class LinearRegression:
     # NORMAL EQUATION 
     # ==================================
 
-    def _normal_equation(self, X, y):
+    def __normal_equation(self, X, y):
         
         # uses the formula theta = (X.T X)^(-1) X.T y
         # I won't use : np.linalg.solve(X.T @ X, X.T @ y)
         # I used pinv to prevent singular matrix error when X isn't invertible 
-        self._theta = np.linalg.pinv(X) @ y
-        self.n_iter_ = 1
+        self.__theta = np.linalg.pinv(X) @ y
+        self.__n_iter_ = 1
 
         
     # ========================================
     # BATCH GRADDIENT DESCENT 
     # =========================================
-    def _batch_gradient_descent(self, X, y):
-        self._initialize_theta(X)
-        
-        for epochs in range(self._epochs):
+    def __batch_gradient_descent(self, X, y):
+        self.__initialize_theta(X)
+     
+        for epochs in range(self.__epochs):
             
-            dtheta =  self._gradient(X,y)
-            self._theta -= self._alpha * dtheta
+            dtheta =  self.__gradient(X,y)
+            self.__theta -= self.__alpha * dtheta
 
-            self._check_numerical_stability(self._theta)
+            self.__check_numerical_stability(self.__theta)
 
-            cost = self._cost(X,y)
+            cost = self.__cost(X,y)
             self.cost_history_.append(cost)
 
-        self.n_iter_ = self._epochs
+        self.__n_iter_ = self.__epochs
              
     
     # ===================================================
     # STOCHASTIC GRADDEINT DESCENT 
     # ===================================================
-    def _stochastic_gradient_descent(self, X,y):
-        self._initialize_theta(X)
+    def __stochastic_gradient_descent(self, X,y):
+        
+        self.__initialize_theta(X)
         m = len(y)
-        for epochs in range(self._epochs):
+        X_shuffled = X
+        y_shuffled = y
+        for epochs in range(self.__epochs):
+            if self.__shufle:
+                indices = self.__rng.permutation(m)
+                X_shuffled = X_shuffled[indices]
+                y_shuffled = y_shuffled[indices]
             for i in range(m):
                 
-                X_i = X[i:i +1]
-                y_i = y[i: i+1]
+                X_i = X_shuffled[i:i +1]
+                y_i = y_shuffled[i: i+1]
 
-                dtheta = self._gradient(X_i, y_i)
-                self._theta -= self._alpha * dtheta
+                dtheta = self.__gradient(X_i, y_i)
+                self.__theta -= self.__alpha * dtheta
 
-            self._check_numerical_stability(self._theta)
+            self.__check_numerical_stability(self.__theta)
             
-            cost = self._cost(X,y)
+            cost = self.__cost(X,y)
             self.cost_history_.append(cost)
 
-        self.n_iter_ = self._epochs
+        self.__n_iter_ = self.__epochs
 
     # ============================================
     # MINI BATCH GRADIENT ALGORITHM
     # ============================================
     
-    def _mini_gradient_descent(self,X,y):
+    def __mini_gradient_descent(self,X,y):
         
-        self._initialize_theta(X)
+        self.__initialize_theta(X)
         m = y.shape[0]
+        X_shuffled = X
+        y_shuffled = y
        
-        for i in range(self._epochs):
-            for start in range(0, m, self._batch_size):
-                end = min(start + self._batch_size, m)
-                X_batch = X[start:end]
-                y_batch = y[start:end]
-                dtheta = self._gradient(X_batch,y_batch)
-                self._theta -= self._alpha * dtheta
-            cost =  self._cost(X,y)
+        for epochs in range(self.__epochs):
+            if self.__shufle:
+                indices = self.__rng.permutation(m)
+                X_shuffled = X_shuffled[indices]
+                y_shuffled = y_shuffled[indices]
+            for start in range(0, m, self.__batch_size):
+                end = min(start + self.__batch_size, m)
+                X_batch = X_shuffled[start:end]
+                y_batch = y_shuffled[start:end]
+                dtheta = self.__gradient(X_batch,y_batch)
+                self.__theta -= self.__alpha * dtheta
+                
+            self.__check_numerical_stability(self.__theta)
+            
+            cost =  self.__cost(X,y)
             self.cost_history_.append(cost)
             
-        self.n_iter_ = self._epochs
+        self.__n_iter_ = self.__epochs
     
 
                  
@@ -279,29 +319,35 @@ class LinearRegression:
         y_pred = np.asarray(y_pred)
         ss_res = np.sum((y - y_pred) ** 2)
         ss_tot = np.sum((y - np.mean(y)) ** 2)
+        if ss_tot == 0:
+            raise ValueError("R² score is undefined when y contains no variance.")
+            
         return 1 - ss_res / ss_tot
+
+
+    def score(self, X, y):
+        y_pred = self.predict(X)
+        return self.r2_score(y, y_pred)
         
     # ========================================
-    # INTERCEPT  AND COEFFICIENT 
+    # INTERCEPT, COEFFICIENT, AND INTERATIONS 
     # ========================================
     
     @property
     def intercept_(self):
-        self._check_fitted()
-        return self._theta[0]
+        self.__check_fitted()
+        return self.__theta[0]
 
     
     @property
     def coef_(self):
-        self._check_fitted()
-        return self._theta[1:]
-
-    # ==================================
-    # PARAMETERS
-    # ==================================
-
+        self.__check_fitted()
+        return self.__theta[1:]
     @property
-    def theta_(self):
-        self._check_fitted()
-        return self._theta.copy()
+    def n_iter(self):
+        self.__check_fitted()
+        return self.__n_iter_
+
+
+    
     
