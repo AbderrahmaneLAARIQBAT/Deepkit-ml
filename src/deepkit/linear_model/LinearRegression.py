@@ -330,7 +330,7 @@ class LinearRegression:
         return self.r2_score(y, y_pred)
         
     # ========================================
-    # INTERCEPT, COEFFICIENT, AND INTERATIONS 
+    # INTERCEPT, COEFFICIENT, AND ITERATIONS 
     # ========================================
     
     @property
