@@ -7,7 +7,7 @@
 Learn. Build. Understand.
 
 [![PyPI](https://img.shields.io/pypi/v/deepkit-ml?style=for-the-badge&logo=pypi&logoColor=white)](https://pypi.org/project/deepkit-ml/#files)
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![PyPI](https://img.shields.io/pypi/v/deepkit-ml?style=for-the-badge&logo=pypi&logoColor=white&cacheSeconds=60)](https://pypi.org/project/deepkit-ml/#files)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 </p>
