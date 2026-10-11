@@ -65,16 +65,16 @@ predictions = model.predict(X)
 
 For multiple linear regression, DeepKit models the target as:
 
-\[
-\hat{y} = \theta_0 + \theta_1x_1 + \theta_2x_2 + \cdots + \theta_nx_n
-\]
+$$
+\hat{y} = \theta_0 + \theta_1 x_1 + \theta_2 x_2 + \cdots + \theta_n x_n
+$$
 
 where:
 
-- \(\hat{y}\) is the predicted value
-- \(\theta_0\) is the intercept
-- \(\theta_1,\ldots,\theta_n\) are the feature coefficients
-- \(x_1,\ldots,x_n\) are the input features
+- $\hat{y}$ is the predicted value
+- $\theta_0$ is the intercept
+- $\theta_1,\ldots,\theta_n$ are the feature coefficients
+- $x_1,\ldots,x_n$ are the input features
 
 Internally, DeepKit adds a column of ones to the feature matrix so the intercept can be learned as part of the parameter vector.
 
@@ -164,11 +164,11 @@ solver="mini-batch"
 
 The Normal Equation provides a closed-form solution:
 
-\[
+$$
 \theta = X^+y
-\]
+$$
 
-where \(X^+\) is the Moore-Penrose pseudoinverse of \(X\).
+where $X^+$ is the Moore-Penrose pseudoinverse of $X$.
 
 DeepKit uses:
 
@@ -200,29 +200,29 @@ Batch Gradient Descent calculates the gradient using the entire training dataset
 
 The Mean Squared Error cost used by DeepKit is:
 
-\[
+```math
 J(\theta)
 =
 \frac{1}{2m}
 \sum_{i=1}^{m}
-(\hat{y}^{(i)}-y^{(i)})^2
-\]
+\left(\hat{y}^{(i)} - y^{(i)}\right)^2
+```
 
 The gradient is:
 
-\[
-\nabla_\theta J
+```math
+\nabla_{\theta} J
 =
-\frac{1}{m}X^T(X\theta-y)
-\]
+\frac{1}{m} X^T (X\theta - y)
+```
 
 The parameters are updated using:
 
-\[
+```math
 \theta
 \leftarrow
-\theta-\alpha\nabla_\theta J
-\]
+\theta - \alpha \nabla_{\theta} J
+```
 
 ### Example
 
@@ -508,12 +508,12 @@ print("R²:", score)
 
 The coefficient of determination is:
 
-\[
+$$
 R^2 =
 1 -
 \frac{\sum_i(y_i-\hat{y}_i)^2}
 {\sum_i(y_i-\bar{y})^2}
-\]
+$$
 
 A value closer to `1` generally indicates that the predictions explain more of the variance in the target.
 
