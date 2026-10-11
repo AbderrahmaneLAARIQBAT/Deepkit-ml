@@ -1,4 +1,7 @@
+LICENSE
+README.md
 pyproject.toml
+src/deepkit/__init__.py
 src/deepkit/linear_model/LinearRegression.py
 src/deepkit/linear_model/__init__.py
 src/deepkit/svm/__init__.py
